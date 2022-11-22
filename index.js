@@ -26,6 +26,23 @@ const client = new MongoClient(uri, {
 });
 const collection = client.db("task_internshala").collection("users");
 // end of MongoDB
+// JWT:
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = authHeader;
+
+  jwt.verify(token, jwtSecret, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "access denied" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
 // apis:
 app.get("/", (req, res) => {
   res.send("Developed by Sadnan");
@@ -36,6 +53,13 @@ app.post("/add-user", async (req, res) => {
   const doc = { email: email, password: password, name: name };
   const result = await collection.insertOne(doc);
   res.send(result);
+});
+
+// get all users
+app.get("/get-users", verifyJWT, async (req, res) => {
+  const cursor = collection.find({});
+  const userData = await cursor.toArray();
+  res.send(userData);
 });
 
 //
